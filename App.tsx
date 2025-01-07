@@ -1,117 +1,119 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {useState} from 'react';
+import {View, Text, TextInput, Button, StyleSheet, Alert} from 'react-native';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+interface Field {
+  price: string;
+  volume: string;
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+const App: React.FC = () => {
+  const [fields, setFields] = useState<Field[]>([
+    {price: '', volume: ''},
+    {price: '', volume: ''},
+  ]);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const addPriceField = () => {
+    setFields([...fields, {price: '', volume: ''}]);
+  };
+
+  const handleInputChange = (
+    index: number,
+    field: keyof Field,
+    value: string,
+  ) => {
+    const newFields = [...fields];
+    newFields[index][field] = value;
+    setFields(newFields);
+  };
+
+  const checkPrices = () => {
+    let cheapestIndex = -1;
+    let cheapestPricePerVolume = Infinity;
+
+    for (let i = 0; i < fields.length; i++) {
+      const {price, volume} = fields[i];
+      const priceNum = parseFloat(price);
+      const volumeNum = parseFloat(volume);
+
+      if (isNaN(priceNum) || isNaN(volumeNum)) {
+        Alert.alert('Invalid input', 'Price and volume must be numbers.');
+        return;
+      }
+
+      const pricePerVolume = priceNum / volumeNum;
+      if (pricePerVolume < cheapestPricePerVolume) {
+        cheapestPricePerVolume = pricePerVolume;
+        cheapestIndex = i;
+      }
+    }
+
+    if (cheapestIndex !== -1) {
+      Alert.alert(
+        'Cheapest Item',
+        `Item ${cheapestIndex + 1} is the cheapest.`,
+      );
+    }
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+    <View style={styles.container}>
+      <Text style={styles.title}>Pair Price $</Text>
+      <Text style={styles.subtitle}>
+        Which one is cheaper? You can easily check!
+      </Text>
+      {fields.map((field, index) => (
+        <View key={index} style={styles.fieldRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Price"
+            value={field.price}
+            keyboardType="numeric"
+            onChangeText={value => handleInputChange(index, 'price', value)}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Volume"
+            value={field.volume}
+            keyboardType="numeric"
+            onChangeText={value => handleInputChange(index, 'volume', value)}
+          />
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      ))}
+      <Button title="Add Price Field" onPress={addPriceField} />
+      <Button title="Check!" onPress={checkPrices} />
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f8f8f8',
   },
-  sectionTitle: {
+  title: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 20,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  highlight: {
-    fontWeight: '700',
+  fieldRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 5,
   },
 });
 
