@@ -1,5 +1,14 @@
-import React, {useState} from 'react';
-import {View, Text, TextInput, Button, StyleSheet, Alert} from 'react-native';
+import React, {useState, useRef} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  PanResponder,
+  Animated,
+} from 'react-native';
 
 interface Field {
   price: string;
@@ -23,6 +32,11 @@ const App: React.FC = () => {
   ) => {
     const newFields = [...fields];
     newFields[index][field] = value;
+    setFields(newFields);
+  };
+
+  const deleteField = (index: number) => {
+    const newFields = fields.filter((_, i) => i !== index);
     setFields(newFields);
   };
 
@@ -55,6 +69,22 @@ const App: React.FC = () => {
     }
   };
 
+  const createPanResponder = (index: number) => {
+    let dx = 0;
+
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        dx = gestureState.dx;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (dx < -50) {
+          deleteField(index);
+        }
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Pair Price $</Text>
@@ -62,7 +92,10 @@ const App: React.FC = () => {
         Which one is cheaper? You can easily check!
       </Text>
       {fields.map((field, index) => (
-        <View key={index} style={styles.fieldRow}>
+        <Animated.View
+          key={index}
+          {...createPanResponder(index).panHandlers}
+          style={styles.fieldRow}>
           <TextInput
             style={styles.input}
             placeholder="Price"
@@ -77,7 +110,7 @@ const App: React.FC = () => {
             keyboardType="numeric"
             onChangeText={value => handleInputChange(index, 'volume', value)}
           />
-        </View>
+        </Animated.View>
       ))}
       <Button title="Add Price Field" onPress={addPriceField} />
       <Button title="Check!" onPress={checkPrices} />
