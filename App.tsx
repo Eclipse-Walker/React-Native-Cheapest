@@ -71,18 +71,36 @@ const App: React.FC = () => {
 
   const createPanResponder = (index: number) => {
     let dx = 0;
+    const translateX = new Animated.Value(0);
 
-    return PanResponder.create({
+    const panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gestureState) => {
         dx = gestureState.dx;
+        Animated.event([null, {dx: translateX}], {useNativeDriver: false})(
+          null,
+          gestureState,
+        );
       },
       onPanResponderRelease: (_, gestureState) => {
         if (dx < -50) {
-          deleteField(index);
+          Animated.timing(translateX, {
+            toValue: -500,
+            duration: 300,
+            useNativeDriver: false,
+          }).start(() => {
+            deleteField(index);
+          });
+        } else {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: false,
+          }).start();
         }
       },
     });
+
+    return {panResponder, translateX};
   };
 
   return (
@@ -91,27 +109,41 @@ const App: React.FC = () => {
       <Text style={styles.subtitle}>
         Which one is cheaper? You can easily check!
       </Text>
-      {fields.map((field, index) => (
-        <Animated.View
-          key={index}
-          {...createPanResponder(index).panHandlers}
-          style={styles.fieldRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Price"
-            value={field.price}
-            keyboardType="numeric"
-            onChangeText={value => handleInputChange(index, 'price', value)}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Volume"
-            value={field.volume}
-            keyboardType="numeric"
-            onChangeText={value => handleInputChange(index, 'volume', value)}
-          />
-        </Animated.View>
-      ))}
+      {fields.map((field, index) => {
+        const {panResponder, translateX} = createPanResponder(index);
+
+        return (
+          <Animated.View
+            key={index}
+            {...panResponder.panHandlers}
+            style={[
+              styles.fieldRow,
+              {
+                transform: [{translateX}],
+                backgroundColor: translateX.interpolate({
+                  inputRange: [-100, 0],
+                  outputRange: ['red', 'transparent'],
+                  extrapolate: 'clamp',
+                }),
+              },
+            ]}>
+            <TextInput
+              style={styles.input}
+              placeholder="Price"
+              value={field.price}
+              keyboardType="numeric"
+              onChangeText={value => handleInputChange(index, 'price', value)}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Volume"
+              value={field.volume}
+              keyboardType="numeric"
+              onChangeText={value => handleInputChange(index, 'volume', value)}
+            />
+          </Animated.View>
+        );
+      })}
       <Button title="Add Price Field" onPress={addPriceField} />
       <Button title="Check!" onPress={checkPrices} />
     </View>
