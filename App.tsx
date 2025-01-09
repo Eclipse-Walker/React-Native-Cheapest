@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -70,20 +70,15 @@ const App: React.FC = () => {
   };
 
   const createPanResponder = (index: number) => {
-    let dx = 0;
     const translateX = new Animated.Value(0);
 
     const panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gestureState) => {
-        dx = gestureState.dx;
-        Animated.event([null, {dx: translateX}], {useNativeDriver: false})(
-          null,
-          gestureState,
-        );
+        translateX.setValue(gestureState.dx);
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (dx < -50) {
+        if (gestureState.dx < -50) {
           Animated.timing(translateX, {
             toValue: -500,
             duration: 300,
@@ -113,35 +108,36 @@ const App: React.FC = () => {
         const {panResponder, translateX} = createPanResponder(index);
 
         return (
-          <Animated.View
-            key={index}
-            {...panResponder.panHandlers}
-            style={[
-              styles.fieldRow,
-              {
-                transform: [{translateX}],
-                backgroundColor: translateX.interpolate({
-                  inputRange: [-100, 0],
-                  outputRange: ['red', 'transparent'],
-                  extrapolate: 'clamp',
-                }),
-              },
-            ]}>
-            <TextInput
-              style={styles.input}
-              placeholder="Price"
-              value={field.price}
-              keyboardType="numeric"
-              onChangeText={value => handleInputChange(index, 'price', value)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Volume"
-              value={field.volume}
-              keyboardType="numeric"
-              onChangeText={value => handleInputChange(index, 'volume', value)}
-            />
-          </Animated.View>
+          <View key={index} style={styles.swipeContainer}>
+            <View style={styles.deleteBackground}>
+              <Text style={styles.deleteText}>Delete</Text>
+            </View>
+            <Animated.View
+              {...panResponder.panHandlers}
+              style={[
+                styles.fieldForeground,
+                {
+                  transform: [{translateX}],
+                },
+              ]}>
+              <TextInput
+                style={[styles.input, styles.textField]}
+                placeholder="Price"
+                value={field.price}
+                keyboardType="numeric"
+                onChangeText={value => handleInputChange(index, 'price', value)}
+              />
+              <TextInput
+                style={[styles.input, styles.textField]}
+                placeholder="Volume"
+                value={field.volume}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  handleInputChange(index, 'volume', value)
+                }
+              />
+            </Animated.View>
+          </View>
         );
       })}
       <Button title="Add Price Field" onPress={addPriceField} />
@@ -167,17 +163,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  fieldRow: {
+  swipeContainer: {
+    marginBottom: 10,
+    position: 'relative',
+  },
+  fieldForeground: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
+  },
+  deleteBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingRight: 20,
+    borderRadius: 5,
+  },
+  deleteText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
     padding: 10,
     marginHorizontal: 5,
+  },
+  textField: {
+    backgroundColor: '#f0f0f0',
     borderRadius: 5,
   },
 });
