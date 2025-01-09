@@ -1,5 +1,14 @@
 import React, {useState} from 'react';
-import {View, Text, TextInput, Button, StyleSheet, Alert} from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  PanResponder,
+  Animated,
+} from 'react-native';
 
 interface Field {
   price: string;
@@ -23,6 +32,11 @@ const App: React.FC = () => {
   ) => {
     const newFields = [...fields];
     newFields[index][field] = value;
+    setFields(newFields);
+  };
+
+  const deleteField = (index: number) => {
+    const newFields = fields.filter((_, i) => i !== index);
     setFields(newFields);
   };
 
@@ -55,30 +69,77 @@ const App: React.FC = () => {
     }
   };
 
+  const createPanResponder = (index: number) => {
+    const translateX = new Animated.Value(0);
+
+    const panResponder = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        translateX.setValue(gestureState.dx);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -50) {
+          Animated.timing(translateX, {
+            toValue: -500,
+            duration: 300,
+            useNativeDriver: false,
+          }).start(() => {
+            deleteField(index);
+          });
+        } else {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    });
+
+    return {panResponder, translateX};
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Pair Price $</Text>
       <Text style={styles.subtitle}>
         Which one is cheaper? You can easily check!
       </Text>
-      {fields.map((field, index) => (
-        <View key={index} style={styles.fieldRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Price"
-            value={field.price}
-            keyboardType="numeric"
-            onChangeText={value => handleInputChange(index, 'price', value)}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Volume"
-            value={field.volume}
-            keyboardType="numeric"
-            onChangeText={value => handleInputChange(index, 'volume', value)}
-          />
-        </View>
-      ))}
+      {fields.map((field, index) => {
+        const {panResponder, translateX} = createPanResponder(index);
+
+        return (
+          <View key={index} style={styles.swipeContainer}>
+            <View style={styles.deleteBackground}>
+              <Text style={styles.deleteText}>Delete</Text>
+            </View>
+            <Animated.View
+              {...panResponder.panHandlers}
+              style={[
+                styles.fieldForeground,
+                {
+                  transform: [{translateX}],
+                },
+              ]}>
+              <TextInput
+                style={[styles.input, styles.textField]}
+                placeholder="Price"
+                value={field.price}
+                keyboardType="numeric"
+                onChangeText={value => handleInputChange(index, 'price', value)}
+              />
+              <TextInput
+                style={[styles.input, styles.textField]}
+                placeholder="Volume"
+                value={field.volume}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  handleInputChange(index, 'volume', value)
+                }
+              />
+            </Animated.View>
+          </View>
+        );
+      })}
       <Button title="Add Price Field" onPress={addPriceField} />
       <Button title="Check!" onPress={checkPrices} />
     </View>
@@ -102,17 +163,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  fieldRow: {
+  swipeContainer: {
+    marginBottom: 10,
+    position: 'relative',
+  },
+  fieldForeground: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
+  },
+  deleteBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingRight: 20,
+    borderRadius: 5,
+  },
+  deleteText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
     padding: 10,
     marginHorizontal: 5,
+  },
+  textField: {
+    backgroundColor: '#f0f0f0',
     borderRadius: 5,
   },
 });
