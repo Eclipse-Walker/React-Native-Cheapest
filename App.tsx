@@ -46,12 +46,14 @@ const App: React.FC = () => {
 
     for (let i = 0; i < fields.length; i++) {
       const {price, volume} = fields[i];
-      const priceNum = parseFloat(price);
-      const volumeNum = parseFloat(volume);
+      let priceNum = parseFloat(price);
+      let volumeNum = parseFloat(volume);
 
       if (isNaN(priceNum) || isNaN(volumeNum)) {
-        Alert.alert('Invalid input', 'Price and volume must be numbers.');
-        return;
+        priceNum = 0;
+        volumeNum = 0;
+        // Alert.alert('Invalid input', 'Price and volume must be numbers.');
+        // return;
       }
 
       const pricePerVolume = priceNum / volumeNum;
@@ -170,9 +172,10 @@ const styles = StyleSheet.create({
   fieldForeground: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 5,
+    // backgroundColor: '#fff',
+    backgroundColor: '#f8f8f8',
+    padding: 0,
+    borderRadius: 0,
   },
   deleteBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -192,7 +195,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   textField: {
-    backgroundColor: '#f0f0f0',
+    // backgroundColor: '#f0f0f0',
+    borderColor: 'gray',
+    borderWidth: 1,
     borderRadius: 5,
   },
 });
